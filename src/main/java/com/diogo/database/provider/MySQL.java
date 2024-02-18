@@ -20,7 +20,6 @@ public class MySQL extends Database {
 
     }
 
-
     @Override
     public Connection getConnection() {
         try {
