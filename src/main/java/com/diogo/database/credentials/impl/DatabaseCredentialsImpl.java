@@ -1,7 +1,7 @@
 package com.diogo.database.credentials.impl;
 
 import com.diogo.database.credentials.DatabaseCredentials;
-import com.diogo.database.credentials.type.DatabaseType;
+import com.diogo.database.DatabaseType;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor

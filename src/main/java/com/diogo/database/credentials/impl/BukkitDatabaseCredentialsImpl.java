@@ -1,6 +1,6 @@
 package com.diogo.database.credentials.impl;
 
-import com.diogo.database.credentials.type.DatabaseType;
+import com.diogo.database.DatabaseType;
 import org.bukkit.configuration.ConfigurationSection;
 
 public class BukkitDatabaseCredentialsImpl extends DatabaseCredentialsImpl {
