@@ -2,7 +2,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     id("java")
-    id("com.github.johnrengelman.shadow") version("8.1.1")
+    id("com.github.johnrengelman.shadow") version("7.1.2")
+    id("maven-publish")
 }
 
 group = "com.diogo"
