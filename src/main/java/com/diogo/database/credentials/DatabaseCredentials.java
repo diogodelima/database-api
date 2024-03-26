@@ -16,4 +16,6 @@ public interface DatabaseCredentials {
 
     String getPassword();
 
+    String getFile();
+
 }

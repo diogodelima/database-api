@@ -9,7 +9,7 @@ public class BukkitDatabaseCredentialsImpl extends DatabaseCredentialsImpl {
     public BukkitDatabaseCredentialsImpl(ConfigurationSection section) {
 
         super(DatabaseType.valueOf(section.getString("type")), section.getString("host"), section.getString("port"),
-                section.getString("database"), section.getString("username"), section.getString("password"));
+                section.getString("database"), section.getString("username"), section.getString("password"), section.getString("file"));
 
     }
 }

@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 public class DatabaseCredentialsImpl implements DatabaseCredentials {
 
     private final DatabaseType type;
-    private final String host, port, database, username, password;
+    private final String host, port, database, username, password, file;
 
     @Override
     public DatabaseType getType() {
@@ -40,4 +40,8 @@ public class DatabaseCredentialsImpl implements DatabaseCredentials {
         return password;
     }
 
+    @Override
+    public String getFile() {
+        return this.file;
+    }
 }
