@@ -13,7 +13,7 @@ public class MySQL extends Database {
 
     public MySQL(String host, String port, String database, String username, String password) {
 
-        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
         dataSource.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
@@ -36,22 +36,41 @@ public class MySQL extends Database {
 
     @Override
     public void beginTransaction() {
-        try (DatabaseExecutor executor = new DatabaseExecutor(getConnection(), "BEGIN TRANSACTION")){
-            executor.write();
+
+        try (DatabaseExecutor executor = execute()){
+            executor
+                    .query("BEGIN TRANSACTION")
+                    .write();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+
     }
 
     @Override
     public void commitTransaction() {
-        try (DatabaseExecutor executor = new DatabaseExecutor(getConnection(), "COMMIT")){
-            executor.write();
+
+        try (DatabaseExecutor executor = execute()){
+            executor
+                    .query("COMMIT")
+                    .write();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+
     }
 
     @Override
     public void rollbackTransaction() {
-        try (DatabaseExecutor executor = new DatabaseExecutor(getConnection(),"ROLLBACK")){
-            executor.write();
+
+        try (DatabaseExecutor executor = execute()){
+            executor
+                    .query("ROLLBACK")
+                    .write();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+
     }
+
 }

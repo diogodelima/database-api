@@ -8,82 +8,74 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @AllArgsConstructor
 public class DatabaseExecutor implements AutoCloseable {
 
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final Connection connection;
-    private final String query;
+    private String query;
 
-    public <T> CompletableFuture<T> readOne(Consumer<PreparedStatement> action, DatabaseAdapter<T> adapter){
+    public DatabaseExecutor(Connection connection){
+        this(connection, null);
+    }
 
-        return CompletableFuture.supplyAsync(() -> {
+    public DatabaseExecutor query(String query){
+        this.query = query;
+        return this;
+    }
 
-            try (PreparedStatement statement = connection.prepareStatement(query)){
+    public <T> T readOne(Consumer<PreparedStatement> action, DatabaseAdapter<T> adapter){
 
-                action.accept(statement);
+        try (PreparedStatement statement = connection.prepareStatement(query)){
 
-                ResultSet resultSet = statement.executeQuery();
-                return resultSet.next() ? adapter.adapt(resultSet) : null;
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
+            action.accept(statement);
 
-        }, executorService);
+            ResultSet resultSet = statement.executeQuery();
+            return resultSet.next() ? adapter.adapt(resultSet) : null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
-    public <T> CompletableFuture<T> readOne(DatabaseAdapter<T> adapter){
+    public <T> T readOne(DatabaseAdapter<T> adapter){
         return readOne(preparedStatement -> {}, adapter);
     }
 
-    public <C extends Collection<T>, T> CompletableFuture<C> readMany(Consumer<PreparedStatement> action, DatabaseAdapter<T> adapter, Supplier<C> supplier){
+    public <C extends Collection<T>, T> C readMany(Consumer<PreparedStatement> action, DatabaseAdapter<T> adapter, Supplier<C> supplier){
 
-        return CompletableFuture.supplyAsync(() -> {
+        try (PreparedStatement statement = connection.prepareStatement(query)){
 
-            try (PreparedStatement statement = connection.prepareStatement(query)){
+            C c = supplier.get();
+            action.accept(statement);
+            ResultSet resultSet = statement.executeQuery();
 
-                C c = supplier.get();
-                action.accept(statement);
-                ResultSet resultSet = statement.executeQuery();
+            while (resultSet.next())
+                c.add(adapter.adapt(resultSet));
 
-                while (resultSet.next())
-                    c.add(adapter.adapt(resultSet));
-
-                return c;
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-
-        }, executorService);
+            return c;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
-    public <C extends Collection<T>, T> CompletableFuture<C> readMany(DatabaseAdapter<T> adapter, Supplier<C> supplier){
+    public <C extends Collection<T>, T> C readMany(DatabaseAdapter<T> adapter, Supplier<C> supplier){
         return readMany(preparedStatement -> {}, adapter, supplier);
     }
 
     public void write(Consumer<PreparedStatement> action){
 
-        CompletableFuture.runAsync(() -> {
+        try (PreparedStatement statement = connection.prepareStatement(query)){
 
-            try (PreparedStatement statement = connection.prepareStatement(query)){
+            action.accept(statement);
+            statement.executeUpdate();
 
-                action.accept(statement);
-                statement.executeUpdate();
-
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-
-        }, executorService);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
@@ -92,24 +84,10 @@ public class DatabaseExecutor implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
 
-        try {
-
-            executorService.shutdown();
-            executorService.awaitTermination(5, TimeUnit.SECONDS);
-
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }finally {
-
-            try {
-                if (connection != null && !connection.isClosed())
-                    connection.close();
-            } catch (SQLException ignored) {}
-
-        }
+        if (this.connection != null && !connection.isClosed())
+            connection.close();
 
     }
-
 }

@@ -18,8 +18,8 @@ public abstract class Database {
 
     public abstract void rollbackTransaction();
 
-    public DatabaseExecutor execute(String query){
-        return new DatabaseExecutor(getConnection(), query);
+    public DatabaseExecutor execute(){
+        return new DatabaseExecutor(getConnection());
     }
 
 }
