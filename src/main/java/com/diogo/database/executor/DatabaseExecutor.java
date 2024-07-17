@@ -2,13 +2,16 @@ package com.diogo.database.executor;
 
 import com.diogo.database.adapter.DatabaseAdapter;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 @AllArgsConstructor
@@ -26,38 +29,61 @@ public class DatabaseExecutor implements AutoCloseable {
         return this;
     }
 
-    public <T> T readOne(Consumer<PreparedStatement> action, DatabaseAdapter<T> adapter){
+    @SneakyThrows
+    public <T> void batch(Collection<T> data, Function<T, Consumer<DatabaseStatement>> function){
 
-        try (PreparedStatement statement = connection.prepareStatement(query)){
+        try (DatabaseStatement statement = new DatabaseStatement(connection.prepareStatement(query))){
 
-            action.accept(statement);
+            this.connection.setAutoCommit(false);
 
-            ResultSet resultSet = statement.executeQuery();
-            return resultSet.next() ? adapter.adapt(resultSet) : null;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            for (T t : data){
+                function.apply(t).accept(statement);
+                statement.addBatch();
+            }
+
+            statement.executeBatch();
+            this.connection.commit();
+            this.connection.setAutoCommit(true);
         }
 
     }
 
-    public <T> T readOne(DatabaseAdapter<T> adapter){
+    @SneakyThrows
+    public <T> Optional<T> readOne(Consumer<DatabaseStatement> action, DatabaseAdapter<T> adapter){
+
+        try (DatabaseStatement statement = new DatabaseStatement(connection.prepareStatement(query))){
+
+            action.accept(statement);
+
+            try (DatabaseQuery query = statement.getQuery()){
+                return query.next() ? Optional.ofNullable(adapter.adapt(query)) : Optional.empty();
+            }
+
+        }
+
+    }
+
+    public <T> Optional<T> readOne(DatabaseAdapter<T> adapter){
         return readOne(preparedStatement -> {}, adapter);
     }
 
-    public <C extends Collection<T>, T> C readMany(Consumer<PreparedStatement> action, DatabaseAdapter<T> adapter, Supplier<C> supplier){
+    @SneakyThrows
+    public <C extends Collection<T>, T> C readMany(Consumer<DatabaseStatement> action, DatabaseAdapter<T> adapter, Supplier<C> supplier){
 
-        try (PreparedStatement statement = connection.prepareStatement(query)){
+        try (DatabaseStatement statement = new DatabaseStatement(connection.prepareStatement(query))){
 
-            C c = supplier.get();
             action.accept(statement);
-            ResultSet resultSet = statement.executeQuery();
 
-            while (resultSet.next())
-                c.add(adapter.adapt(resultSet));
+            try (DatabaseQuery query = statement.getQuery()){
 
-            return c;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+                C c = supplier.get();
+
+                while (query.next())
+                    c.add(adapter.adapt(query));
+
+                return c;
+            }
+
         }
 
     }
@@ -66,14 +92,14 @@ public class DatabaseExecutor implements AutoCloseable {
         return readMany(preparedStatement -> {}, adapter, supplier);
     }
 
-    public void write(Consumer<PreparedStatement> action){
+    public void write(Consumer<DatabaseStatement> action){
 
-        try (PreparedStatement statement = connection.prepareStatement(query)){
+        try (DatabaseStatement statement = new DatabaseStatement(connection.prepareStatement(query))){
 
             action.accept(statement);
-            statement.executeUpdate();
+            statement.execute();
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -83,8 +109,9 @@ public class DatabaseExecutor implements AutoCloseable {
         write(preparedStatement -> {});
     }
 
+    @SneakyThrows
     @Override
-    public void close() throws Exception {
+    public void close() {
 
         if (this.connection != null && !connection.isClosed())
             connection.close();

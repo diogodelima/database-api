@@ -1,11 +1,12 @@
 package com.diogo.database.adapter;
 
-import java.sql.ResultSet;
+import com.diogo.database.executor.DatabaseQuery;
+
 import java.sql.SQLException;
 
 @FunctionalInterface
 public interface DatabaseAdapter<T> {
 
-    T adapt(ResultSet resultSet) throws SQLException;
+    T adapt(DatabaseQuery query) throws SQLException;
 
 }

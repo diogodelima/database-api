@@ -4,9 +4,9 @@ import com.diogo.database.credentials.DatabaseCredentials;
 import com.diogo.database.provider.MySQL;
 import com.diogo.database.Database;
 import com.diogo.database.provider.SQLite;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class DatabaseConnection {
 
     private final DatabaseCredentials databaseCredentials;
