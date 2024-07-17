@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,14 +31,14 @@ public class DatabaseExecutor implements AutoCloseable {
     }
 
     @SneakyThrows
-    public <T> void batch(Collection<T> data, Function<T, Consumer<DatabaseStatement>> function){
+    public <T> void batch(Collection<T> data, BiConsumer<T, DatabaseStatement> action){
 
         try (DatabaseStatement statement = new DatabaseStatement(connection.prepareStatement(query))){
 
             this.connection.setAutoCommit(false);
 
             for (T t : data){
-                function.apply(t).accept(statement);
+                action.accept(t, statement);
                 statement.addBatch();
             }
 

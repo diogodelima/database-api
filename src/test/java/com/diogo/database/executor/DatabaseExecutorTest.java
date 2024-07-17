@@ -110,7 +110,7 @@ public class DatabaseExecutorTest {
                     .query("""
                             INSERT INTO test VALUES(?,?)
                             """)
-                    .batch(data, person -> statement -> {
+                    .batch(data, (person, statement) -> {
                         statement.set(1, person.name);
                         statement.set(2, person.age);
                     });
