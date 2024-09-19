@@ -3,10 +3,9 @@ package com.diogo.database.executor;
 import com.diogo.database.Database;
 import com.diogo.database.DatabaseType;
 import com.diogo.database.connection.DatabaseConnection;
-import com.diogo.database.credentials.impl.DatabaseCredentialsImpl;
+import com.diogo.database.credentials.impl.LocalDatabaseCredentialsImpl;
 import org.junit.jupiter.api.Test;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,8 +36,7 @@ public class DatabaseExecutorTest {
         }
 
     private final Database database = new DatabaseConnection(
-            new DatabaseCredentialsImpl(DatabaseType.SQLITE, "localhost", "3306", "test",
-                    "root", "", "database.db")
+            new LocalDatabaseCredentialsImpl(DatabaseType.SQLITE, "database.db")
     ).setup();
 
     @Test

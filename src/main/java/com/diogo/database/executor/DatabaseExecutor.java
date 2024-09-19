@@ -31,6 +31,23 @@ public class DatabaseExecutor implements AutoCloseable {
     }
 
     @SneakyThrows
+    public void beginTransaction(){
+        this.connection.setAutoCommit(false);
+    }
+
+    @SneakyThrows
+    public void commitTransaction(){
+        this.connection.commit();
+        this.connection.setAutoCommit(true);
+    }
+
+    @SneakyThrows
+    public void rollbackTransaction(){
+        this.connection.rollback();
+        this.connection.setAutoCommit(true);
+    }
+
+    @SneakyThrows
     public <T> void batch(Collection<T> data, BiConsumer<T, DatabaseStatement> action){
 
         try (DatabaseStatement statement = new DatabaseStatement(connection.prepareStatement(query))){

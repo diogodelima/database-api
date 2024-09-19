@@ -1,25 +1,27 @@
 package com.diogo.database;
 
 import com.diogo.database.executor.DatabaseExecutor;
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.SneakyThrows;
 
 import java.sql.Connection;
 
+@Getter
 @AllArgsConstructor
 public abstract class Database {
 
-    public abstract Connection getConnection();
+    private final HikariDataSource dataSource = new HikariDataSource();
 
-    public abstract void close();
+    public Database(String jdbcUrl, String driverClassName) {
+        this.dataSource.setJdbcUrl(jdbcUrl);
+        this.dataSource.setDriverClassName(driverClassName);
+    }
 
-    public abstract void beginTransaction();
-
-    public abstract void commitTransaction();
-
-    public abstract void rollbackTransaction();
-
+    @SneakyThrows
     public DatabaseExecutor execute(){
-        return new DatabaseExecutor(getConnection());
+        return new DatabaseExecutor(dataSource.getConnection());
     }
 
 }
